@@ -150,7 +150,10 @@ class Harness:
 
 @pytest.fixture
 def settings(tmp_path) -> Settings:
+    # `_env_file=None`：测试绝不去读开发机的 .env。否则「本地绿、CI 红」——
+    # 曾经就是因为 .env 里 ABSTAIN_ENABLED=false 掩盖了代码默认值是 true。
     return Settings(
+        _env_file=None,
         db_path=tmp_path / "memory.db",
         embedding_dim=DIM,
         route_pool=50,

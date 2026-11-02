@@ -66,7 +66,7 @@ messages ──► parse inline images (data URI) ──► sha256 per image
 query text + query images
    │
    ├─ query images ──► caption once (cached by sha256) ──► visual text
-   ├─ abstain?  (question content words absent from the corpus → return [])
+   ├─ abstain?  (off by default; when on: content words absent → return [])
    │
    ├─ lexical routes (FTS5)          fts_word      : word tokens + camelCase expansions
    │                                 fts_trigram   : character trigrams (typos, partial words)

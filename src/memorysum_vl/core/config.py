@@ -83,8 +83,9 @@ class Settings(BaseSettings):
     route_weights: str = ""
     max_query_images: int = 4
 
-    # 弃答：问题实词在语料里一个都没出现时返回空列表，而不是硬凑最像的记忆
-    abstain_enabled: bool = True
+    # 弃答：问题实词在语料里一个都没出现时返回空列表，而不是硬凑最像的记忆。
+    # 默认关闭：实测交空 data 反而少得分（9 题 3→2），保留为显式开关。
+    abstain_enabled: bool = False
     abstain_min_terms: int = 2
     abstain_mass_ratio: float = 0.7
 
