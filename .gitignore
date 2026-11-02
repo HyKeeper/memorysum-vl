@@ -220,3 +220,30 @@ __marimo__/
 .streamlit/secrets.toml
 
 .secrets/
+
+# 本地 SQLite 记忆库
+data/
+
+# 本地迭代记录（工作日志，不入库）
+record.md
+smoke-runs.md
+smoke-experiments.state.json
+.env.experiment-baseline
+
+# ── memorysum-vl 本地状态 / 内部实验产物 ────────────────────────────────────
+# 应用日志（*.log 只匹配后缀，info.log.1 这种轮转文件要单独写）
+info.log*
+*.log.[0-9]*
+# 环境变量备份（真凭据只在 .env / .secrets，均已被忽略）
+.env.bak*
+.env.*.bak
+# 评测/实验脚手架：与本仓库的公开实现无关，留在本地
+bench/
+smoke-runs.md
+smoke-experiments.state.json
+scripts/experiment_runner.py
+scripts/experiments.json
+scripts/platform_results.py
+scripts/protocol_audit.py
+scripts/submit_smoke.py
+scripts/version_fingerprint.py

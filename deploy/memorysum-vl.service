@@ -1,0 +1,33 @@
+# Template systemd unit — adjust User, WorkingDirectory and the venv path.
+#
+#   sudo cp deploy/memorysum-vl.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now memorysum-vl
+#
+# The service reads .env from its WorkingDirectory, so both must agree.
+# Model servers (deploy/llama/*.sh) are intentionally separate units: they have
+# different restart semantics and hold the GPU.
+[Unit]
+Description=memorysum-vl multimodal memory service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=memory
+Group=memory
+WorkingDirectory=/opt/memorysum-vl
+EnvironmentFile=-/opt/memorysum-vl/.env
+ExecStart=/opt/memorysum-vl/.venv/bin/uvicorn memorysum_vl.main:app \
+    --app-dir /opt/memorysum-vl/src --host 127.0.0.1 --port 8003 --no-access-log
+Restart=on-failure
+RestartSec=3
+# keep the application log file out of journald; the app writes info.log itself
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/memorysum-vl/data /opt/memorysum-vl
+
+[Install]
+WantedBy=multi-user.target

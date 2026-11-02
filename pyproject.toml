@@ -1,29 +1,76 @@
 [project]
 name = "memorysum-vl"
 version = "0.1.0"
-description = "Memory service exposing the Add and Search contract for text, code and multimodal tracks"
+description = "Self-hosted multimodal memory service for agents: Add/Search over conversations with text and images"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "HyKeeper" }]
 requires-python = ">=3.12"
+keywords = [
+    "agent-memory",
+    "multimodal",
+    "retrieval",
+    "rag",
+    "sqlite",
+    "sqlite-vec",
+    "llama.cpp",
+    "rrf",
+    "reranker",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Database :: Database Engines/Servers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
 dependencies = [
     "fastapi>=0.115",
+    "httpx>=0.27",
+    "jieba>=0.42",
+    "pillow>=11.0",
     "pydantic>=2.9",
     "pydantic-settings>=2.5",
+    "sqlite-vec>=0.1.9",
     "uvicorn[standard]>=0.30",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "httpx>=0.27",
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "ruff>=0.6",
 ]
 
+[project.scripts]
+memorysum-vl = "memorysum_vl.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/HyKeeper/memorysum-vl"
+Documentation = "https://github.com/HyKeeper/memorysum-vl/tree/master/docs"
+Source = "https://github.com/HyKeeper/memorysum-vl"
+Issues = "https://github.com/HyKeeper/memorysum-vl/issues"
+Changelog = "https://github.com/HyKeeper/memorysum-vl/commits/master"
+
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/memorysum_vl"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "deploy", "docs", "examples", "README.md", "README.zh-CN.md", "LICENSE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff]
 line-length = 100
@@ -32,3 +79,6 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.format]
+quote-style = "double"

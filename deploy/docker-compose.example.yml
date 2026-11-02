@@ -1,0 +1,81 @@
+# Example: the API plus all three llama.cpp model servers in containers.
+#
+#   cp deploy/docker-compose.example.yml docker-compose.yml
+#   MODEL_DIR=~/models DOCKER_GPU=1 docker compose up -d
+#
+# Notes
+#  * `LLAMA_CPP_IMAGE` must be a tag that exists for your driver; check
+#    https://github.com/ggml-org/llama.cpp/pkgs/container/llama.cpp (the CUDA
+#    tags are built with a specific CUDA version — a mismatch shows up as
+#    "CUDA driver version is insufficient for CUDA runtime version").
+#  * These images start `llama-server` themselves, so `command:` carries flags
+#    only. Verify with: docker run --rm $LLAMA_CPP_IMAGE --help
+#  * For a CPU-only box set LLAMA_CPP_IMAGE to a `server` (non-CUDA) tag, drop
+#    the `deploy.resources` blocks, and pass `-ngl 0`.
+name: memorysum-vl
+
+x-llama: &llama
+  restart: unless-stopped
+  volumes:
+    - ${MODEL_DIR:-~/models}:/models:ro
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
+
+services:
+  captioner:
+    <<: *llama
+    image: ${LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server-cuda}
+    environment:
+      LLAMA_MEDIA_MARKER: "<__media__>"
+    command: >
+      -m /models/Rax-4.5.Q8_0.gguf
+      --mmproj /models/Rax-4.5.mmproj-f16.gguf
+      --jinja -fa on -c 8192 -b 2048 -ub 1024 -ngl 99 --cache-ram 0
+      --host 0.0.0.0 --port 7996 --alias rax-4.5
+    ports: ["7996:7996"]
+
+  embedder:
+    <<: *llama
+    image: ${LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server-cuda}
+    environment:
+      LLAMA_MEDIA_MARKER: "<__media__>"
+    command: >
+      -m /models/Qwen.Qwen3-VL-Embedding-2B.f16.gguf
+      --mmproj /models/mmproj-Qwen.Qwen3-VL-Embedding-2B.f16.gguf
+      --embeddings --pooling last -fa on -c 16384 -b 4096 -ub 2048 -np 8
+      --image-min-tokens 256 --image-max-tokens 1536 -ngl 99 --cache-ram 0
+      --host 0.0.0.0 --port 7998 --alias qwen3-vl-embedding-2b
+    ports: ["7998:7998"]
+
+  reranker:
+    <<: *llama
+    image: ${LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server-cuda}
+    command: >
+      -m /models/bge-reranker-v2-m3-Q8_0.gguf
+      --reranking --pooling rank -fa on
+      -c 8192 -b 8192 -ub 8192 -ngl 99 --cache-ram 0
+      --host 0.0.0.0 --port 7997 --alias bge-reranker-v2-m3
+    ports: ["7997:7997"]
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    depends_on: [captioner, embedder, reranker]
+    environment:
+      MEMORYSUM_DB_PATH: /data/memorysum.db
+      MEMORYSUM_AUTH_TOKEN_FILE: /run/secrets/api_token
+      MEMORYSUM_CAPTION_BASE_URL: http://captioner:7996
+      MEMORYSUM_EMBEDDING_BASE_URL: http://embedder:7998
+      MEMORYSUM_RERANK_BASE_URL: http://reranker:7997
+      MEMORYSUM_LOG_FILE: ""
+    volumes:
+      - ./data:/data
+      - ./.secrets/api_token:/run/secrets/api_token:ro
+    ports: ["8003:8003"]
