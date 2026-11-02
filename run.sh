@@ -24,7 +24,15 @@ HOST="${HOST:-0.0.0.0}"
 PORT="${PORT:-8003}"
 PYTHON="${PYTHON:-.venv/bin/uvicorn}"
 
-pids() { pgrep -f "$PATTERN" || true; }
+# Only real python/uvicorn processes: a transient shell whose command line happens
+# to mention the module must not look like a running service.
+pids() {
+  pgrep -f "$PATTERN" 2>/dev/null | while read -r pid; do
+    case "$(cat /proc/"$pid"/comm 2>/dev/null)" in
+      python* | uvicorn) printf '%s\n' "$pid" ;;
+    esac
+  done
+}
 
 case "${1:-status}" in
   start)
