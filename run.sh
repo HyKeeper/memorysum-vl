@@ -16,7 +16,9 @@ set -uo pipefail
 
 cd "$(dirname "$0")" || exit 1
 
-PATTERN='uvicorn memorysum_vl.main:app'
+# Bracket trick: the pattern text itself must not match, or pgrep would report the
+# shell that is running this script (and "start" would think we are already up).
+PATTERN='[u]vicorn memorysum_vl\.main'
 UVICORN_OUT="${UVICORN_OUT:-/tmp/memorysum.uvicorn.log}"
 HOST="${HOST:-0.0.0.0}"
 PORT="${PORT:-8003}"
@@ -30,7 +32,7 @@ case "${1:-status}" in
       echo "already running: pid $(pids | tr '\n' ' ')"
       exit 0
     fi
-    nohup setsid "$PYTHON" memorysum_vl.main:app \
+    nohup setsid "$PYTHON" memorysum_vl.main:create_app --factory \
       --app-dir src --host "$HOST" --port "$PORT" --no-access-log \
       >> "$UVICORN_OUT" 2>&1 < /dev/null &
     sleep 2

@@ -9,6 +9,9 @@ from __future__ import annotations
 import base64
 import io
 import math
+import os
+import subprocess
+import sys
 from datetime import UTC, datetime
 
 import httpx
@@ -507,3 +510,23 @@ async def test_image_transcript_is_indexed_and_returned(
     text = hit_text(hits[0])
     assert "舅妈" in text
     assert "[image text]" in text
+
+
+def test_importing_the_app_module_needs_no_credentials(tmp_path):
+    """`import memorysum_vl.main` 必须无副作用。
+
+    CI 里既没有 `.env` 也没有 token；如果导入模块就构造应用，任何一次
+    `pytest`（或别人的 `python -c "import memorysum_vl.main"`）都会因为缺凭据
+    直接失败。所以在干净目录、清空所有 MEMORYSUM_* 变量的子进程里导入一次。
+    """
+    code = "import memorysum_vl.main as m; assert callable(m.create_app); print('ok')"
+    env = {key: value for key, value in os.environ.items() if not key.startswith("MEMORYSUM_")}
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=tmp_path,  # 没有 .env 的目录
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "ok" in result.stdout

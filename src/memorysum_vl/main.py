@@ -1,3 +1,13 @@
+"""应用装配入口。
+
+用**工厂**方式启动，使 `import memorysum_vl.main` 没有副作用（不读 token、不连数据库），
+测试与 CI 因此不需要任何凭据就能导入：
+
+    uvicorn memorysum_vl.main:create_app --factory --app-dir src --port 8003
+
+`memorysum_vl.main:app` 也仍然可用（见文件末尾的按需构造）。
+"""
+
 import asyncio
 import contextlib
 from collections.abc import AsyncIterator
@@ -84,4 +94,14 @@ async def _probe(container: Container) -> None:
     logger.info("模型服务就绪", extra=status)
 
 
-app = create_app()
+def __getattr__(name: str) -> FastAPI:
+    """按需构造默认应用。
+
+    `uvicorn memorysum_vl.main:app` 照旧可用，但只有真正取 `app` 时才会执行
+    `create_app()`（此时才需要 token）。导入模块本身保持无副作用。
+    """
+    if name != "app":
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    application = create_app()
+    globals()["app"] = application
+    return application

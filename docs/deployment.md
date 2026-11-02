@@ -85,7 +85,8 @@ reachable — the first line of the log is the answer to "did my ports line up?"
 **Directly:**
 
 ```bash
-.venv/bin/uvicorn memorysum_vl.main:app --app-dir src --host 0.0.0.0 --port 8003 --no-access-log
+.venv/bin/uvicorn memorysum_vl.main:create_app --factory --app-dir src \
+    --host 0.0.0.0 --port 8003 --no-access-log
 # or, after `pip install .`:
 memorysum-vl --host 0.0.0.0 --port 8003
 ```

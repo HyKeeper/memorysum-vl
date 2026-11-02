@@ -26,7 +26,8 @@ def main() -> int:
 
     # log_config=None keeps our own formatter/handlers instead of uvicorn's defaults
     uvicorn.run(
-        "memorysum_vl.main:app",
+        "memorysum_vl.main:create_app",
+        factory=True,
         host=args.host,
         port=args.port,
         reload=args.reload,

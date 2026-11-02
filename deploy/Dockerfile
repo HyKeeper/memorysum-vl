@@ -30,5 +30,5 @@ EXPOSE 8003
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/healthz').read()"
 
-CMD ["uvicorn", "memorysum_vl.main:app", \
+CMD ["uvicorn", "memorysum_vl.main:create_app", "--factory", \
      "--host", "0.0.0.0", "--port", "8003", "--no-access-log"]
